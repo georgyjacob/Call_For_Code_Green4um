@@ -44,9 +44,9 @@ sidebar = html.Div(
     style=SIDEBAR_STYLE,
 )
 
-path = "C:/Users/KD169FE/OneDrive - EY/Desktop/Call for  code/Application/"
-raw_data = pd.ExcelFile(path+"Call_for_code_Data.xlsx")
-emis = pd.ExcelFile(path + "emissions.xlsx")
+# path = "C:/Users/KD169FE/OneDrive - EY/Desktop/Call for  code/Application/"
+raw_data = pd.ExcelFile("Call_for_code_Data.xlsx")
+emis = pd.ExcelFile("emissions.xlsx")
 
 app = dash.Dash(__name__) 
 
@@ -320,4 +320,4 @@ app.layout = html.Div([ sidebar, content])
 
 
 if __name__ == '__main__':
-    app.run_server(debug=True)
+    app.run_server(debug=True,host='0.0.0.0', port=8050)
