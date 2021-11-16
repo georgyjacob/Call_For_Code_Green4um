@@ -44,9 +44,9 @@ sidebar = html.Div(
     style=SIDEBAR_STYLE,
 )
 
-# path = "C:/Users/KD169FE/OneDrive - EY/Desktop/Call for  code/Application/"
-raw_data = pd.ExcelFile("Call_for_code_Data.xlsx")
-emis = pd.ExcelFile("emissions.xlsx")
+path = "C:/Users/KD169FE/OneDrive - EY/Desktop/Call for  code/Application/"
+raw_data = pd.ExcelFile(path+"Call_for_code_Data.xlsx")
+emis = pd.ExcelFile(path + "emissions.xlsx")
 
 app = dash.Dash(__name__) 
 
@@ -56,7 +56,7 @@ colors = {
     'text1':'#000000'
 }
 
-
+## create data 
 df1 = pd.DataFrame()
 for sheet in emis.sheet_names[2:]:
     emis_df = emis.parse(sheet_name = sheet)
@@ -162,6 +162,7 @@ content  = html.Div(style={'backgroundColor': colors['background']},children=[
         html.H1(children='Enabling Responsible production and Green consumption', style={'textAlign': 'center','color': colors['text'],"margin-left": "18rem",
         "margin-right": "2rem",
         "padding": "2rem 1rem"}),
+        ### Sunburst chart 
         
 
         html.Div(children='''
@@ -172,13 +173,13 @@ content  = html.Div(style={'backgroundColor': colors['background']},children=[
         "margin-left": "18rem",
         "margin-right": "2rem",
         "padding": "2rem 1rem"}),
-        dcc.Dropdown(id = 'sunburst',
+        dcc.Dropdown(id = 'sunburst',multi = True,
         options = [{'label':x ,'value':x} for x in sorted (df1.Country.unique())],
-        style={'textAlign': 'center',
+        value = ['US','Europe'],style={'textAlign': 'center',
         'color': colors['text1'],
         'fontSize': 20,
-        'width': '50%' ,
-        "margin-left": "20rem",
+        'width':'50%',
+        "margin-left": "4rem",
         "margin-right": "2rem",
         "padding": "10px 10px"}),
 
@@ -194,6 +195,7 @@ content  = html.Div(style={'backgroundColor': colors['background']},children=[
             
         )       
     ]),
+    ### Aggregate_Area  chart 
     html.Div(children='''
         Emissions of agg_area chart
         ''',style={'textAlign': 'center',
@@ -207,6 +209,7 @@ content  = html.Div(style={'backgroundColor': colors['background']},children=[
         value = ['US','Europe'],style={'textAlign': 'center',
         'color': colors['text1'],
         'fontSize': 20,
+        'width':'50%',
         "margin-left": "4rem",
         "margin-right": "2rem",
         "padding": "10px 10px"}),
@@ -221,16 +224,53 @@ content  = html.Div(style={'backgroundColor': colors['background']},children=[
         "margin-right": "2rem",
         "padding": "2rem 1rem"}
             
+        ) ,
+        ### Line  chart
+       html.Div(children='''
+        Emissions of line chart
+        ''',style={'textAlign': 'center',
+        'color': colors['text1'],
+        'fontSize': 20,
+        "margin-left": "18rem",
+        "margin-right": "2rem",
+        "padding": "2rem 1rem"}),
+        dcc.Dropdown(id = 'country',
+        options = [{'label':x ,'value':x} for x in sorted (df1.Country.unique())],
+        value = 'US',style={'textAlign': 'center',
+        'color': colors['text1'],
+        'fontSize': 20,
+        'width':'50%',
+        "margin-left": "4rem",
+        "margin-right": "2rem",
+        "padding": "10px 10px"}),
+        dcc.Dropdown(id = 'emission',
+        options = [{'label':x ,'value':x} for x in sorted (df1.Emission.unique())],
+        value = 'US',style={'textAlign': 'center',
+        'color': colors['text1'],
+        'fontSize': 20,
+        'width':'50%',
+        "margin-left": "4rem",
+        "margin-right": "2rem",
+        "padding": "10px 10px"}),
+
+        dcc.Graph(
+            id='graph3',
+            figure = {},
+            style={'textAlign': 'center',
+        'color': colors['text1'],
+        'fontSize': 20,
+        "margin-left": "18rem",
+        "margin-right": "2rem",
+        "padding": "2rem 1rem"}
+            
         ) 
 ])
 @app.callback(
     Output(component_id = 'graph1' ,component_property = 'figure' ),
-    [Input(component_id = 'sunburst',component_property = 'value')],
-    prevent_initial_call = False
-)
+    [Input(component_id = 'sunburst',component_property = 'value')])
 
-def update_sunburst(value):
-    fig1 = px.sunburst(df1[df1["Country"].isin(value)], 
+def update_sunburst(val):
+    fig1 = px.sunburst(df1[df1["Country"].isin(val)], 
                   path=['Country', 'Emission','Industry'], 
                   values='2018',
                   hover_data=["Emission"],
@@ -240,8 +280,7 @@ def update_sunburst(value):
 
 @app.callback(
     Output(component_id = 'graph2' ,component_property = 'figure' ),
-    [Input(component_id = 'agg_area',component_property = 'value')],
-    prevent_initial_call = False
+    [Input(component_id = 'agg_area',component_property = 'value')]
 )
 
 def update_agg(val):
@@ -256,9 +295,29 @@ def update_agg(val):
     fig2.update_layout(paper_bgcolor=colors['background'])
     return fig2
 
+@app.callback(
+    Output(component_id = 'graph3' ,component_property = 'figure' ),
+    [Input(component_id = 'country',component_property = 'value'),
+    Input(component_id = 'emission',component_property = 'value')]
+)
+
+def update_line(country,emission):
+    fig3 = px.line(line_chart[(line_chart.Year.isin(['2018','2025','2030','2040']))&
+                          (line_chart["Country"]== country )&
+                          (line_chart["Emission"]== emission)].
+              groupby(["Year","Country","Emission","Scenario"]).
+              agg({'Emissions':sum}).
+              reset_index(), 
+              
+              x="Year", 
+              y="Emissions", 
+              color='Scenario')
+    fig3.update_layout(paper_bgcolor=colors['background'])
+    return fig3
+
 app.layout = html.Div([ sidebar, content])
 
 
 
 if __name__ == '__main__':
-    app.run_server(debug=True,host='0.0.0.0', port=8050)
+    app.run_server(debug=True)
